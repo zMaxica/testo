@@ -1,0 +1,244 @@
+-- script ต้นฉบับ
+local ScreenGui = Instance.new("ScreenGui")
+local ButtonA = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+ButtonA.Name = "ButtonA"
+ButtonA.Parent = ScreenGui
+ButtonA.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
+ButtonA.BorderColor3 = Color3.fromRGB(0, 0, 0)
+ButtonA.BorderSizePixel = 0
+ButtonA.Position = UDim2.new(0.0445544571, 0, 0.114427857, 0)
+ButtonA.Size = UDim2.new(0, 93, 0, 64)
+ButtonA.Font = Enum.Font.SourceSans
+ButtonA.Text = "X"
+ButtonA.TextColor3 = Color3.fromRGB(0, 0, 0)
+ButtonA.TextSize = 88.000
+
+UICorner.Parent = ButtonA
+ButtonA.MouseButton1Down:Connect(function()
+	game:GetService("VirtualInputManager"):SendKeyEvent(true, "F6" , false , game)
+end)
+
+-- เริ่มทำ script
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SleepyUncle", "BloodTheme")
+
+-- สร้างแท็บ Farming และส่วนการใช้งาน Section
+local Tab1 = Window:NewTab("Farming")
+local Section1 = Tab1:NewSection("Warp & Auto Stand")
+
+-- ปุ่มสำหรับเทเลพอร์ตไปยังที่ใกล้ ICE
+Section1:NewButton("Warp Near ICE", "Teleport to near ICE", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2429.236083984375, 416.6152038574219, -1750.8861083984375)
+end)
+
+-- ปุ่มสำหรับเทเลพอร์ตไปยัง ICE
+Section1:NewButton("Warp Ice", "Teleport to ICE", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2294.54150390625, 386.88006591796875, -1856.322509765625)
+end)
+
+-- ปุ่มสำหรับการเคลื่อนที่อัตโนมัติไปยัง ICE
+Section1:NewButton("Auto Stand ICE", "Move to ICE", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local targetPosition = Vector3.new(-2294.54150390625, 386.88006591796875, -1856.322509765625)
+
+    while true do
+        if (character.HumanoidRootPart.Position - targetPosition).Magnitude > 5 then
+            humanoid:MoveTo(targetPosition)
+        end
+        wait(1)
+    end
+end)
+
+-- ปุ่มสำหรับตรวจจับผู้เล่นใกล้เคียง
+Section1:NewButton("Auto Detect", "Detect nearby players", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local detectionRadius = 200
+
+    local function checkForNearbyPlayers()
+        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+            -- ยกเว้นผู้เล่นที่มีชื่อ "testerloadsss", "DarkFalcon_Z", "zMaxica" และ "testerloadxxx"
+            if otherPlayer.Name ~= "testerloadsss" and otherPlayer.Name ~= "DarkFalcon_Z" and otherPlayer.Name ~= "zMaxica" and otherPlayer.Name ~= "testerloadxxx" and otherPlayer ~= player
+               and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local otherCharacter = otherPlayer.Character
+                local distance = (character.HumanoidRootPart.Position - otherCharacter.HumanoidRootPart.Position).Magnitude
+                
+                if distance <= detectionRadius then
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        local args = { [1] = "Teleport Crystal" }
+                        game:GetService("ReplicatedStorage").UseConsumable:InvokeServer(unpack(args))
+                    end
+
+                    -- ส่งข้อมูลไปยัง Discord Webhook
+                    local OSTime = os.time()
+                    local Time = os.date('!*t', OSTime)
+                    local Avatar = 'https://cdn.discordapp.com/embed/avatars/4.png'
+                    local Content = 'discord webhooks if tp to floor 1'
+                    local Embed = {
+                        title = 'TP TO FLOOR 1 complete',
+                        color = 99999,
+                        footer = { text = game.JobId },
+                        author = {
+                            name = 'ROBLOX',
+                            url = 'https://www.roblox.com/',
+                        },
+                        fields = {
+                            {
+                                name = 'tp to floor5',
+                                value = 'Lets go !!!',
+                            }
+                        },
+                        timestamp = string.format('%d-%d-%dT%02d:%02d:%02dZ', Time.year, Time.month, Time.day, Time.hour, Time.min, Time.sec),
+                    }
+                    (syn and syn.request or http_request) {
+                        Url = 'https://discord.com/api/webhooks/1194553670449238016/oQvL4ll1O7iwFhvUCUKL33Yh9kqPQxhFOIiiwbBnU08Nrwpd7nXVLPP8oEkN3xmzGaKh',
+                        Method = 'POST',
+                        Headers = { ['Content-Type'] = 'application/json' },
+                        Body = game:GetService('HttpService'):JSONEncode({ content = Content; embeds = { Embed } }),
+                    }
+                    break
+                end
+            end
+        end
+    end
+
+    while wait(0.5) do
+        checkForNearbyPlayers()
+    end
+end)
+
+
+Section1:NewButton("Auto Heal", "Consume potion", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    local autoHealActive = true -- ตัวควบคุมเปิด/ปิด Auto Heal
+
+    -- เริ่มใช้งาน Auto Heal
+    while autoHealActive do
+        local currentHealth = humanoid.Health
+        local maxHealth = humanoid.MaxHealth
+
+        -- ตรวจสอบว่า HP ต่ำกว่า 40% หรือไม่
+        if currentHealth < (maxHealth * 0.4) then
+            local args = { [1] = "Health Potion III" }
+            game:GetService("ReplicatedStorage").UseConsumable:InvokeServer(unpack(args))
+            print("ใช้ Health Potion III: HP ต่ำกว่า 40%") -- Debug log
+        end
+
+        wait(1) -- รอ 1 วินาทีก่อนตรวจสอบใหม่
+    end
+end)
+
+
+
+-- สร้างแท็บ Teleport และส่วนการใช้งาน Section
+local Tab2 = Window:NewTab("Teleport")
+local Section2 = Tab2:NewSection("Teleport to")
+
+-- ปุ่มสำหรับเทเลพอร์ตไปยังห้องบอสชั้น 1
+Section2:NewButton("Boss room floor 1", "ButtonInfo", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-540.53759765625, 1917.20947265625, -726.7208862304688)
+end)
+
+-- ปุ่มสำหรับเทเลพอร์ตไปยังบัญชีหลัก
+Section2:NewButton("TP to main account", "ButtonInfo", function()
+    local targetPlayerName = "zMaxica"
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local function teleportToTargetPlayer()
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetCharacter = targetPlayer.Character
+            local targetPosition = targetCharacter.HumanoidRootPart.Position
+
+            -- เทเลพอร์ตตัวละครไปที่ตำแหน่งของผู้เล่น "zMaxica"
+            character:SetPrimaryPartCFrame(CFrame.new(targetPosition))
+        else
+            print("ไม่พบผู้เล่นที่ชื่อ " .. targetPlayerName)
+        end
+    end
+
+    -- เรียกใช้ฟังก์ชัน
+    teleportToTargetPlayer()
+end)
+
+-- สร้างแท็บ Function และส่วนการใช้งาน Section
+local Tab3 = Window:NewTab("Function")
+local Section3 = Tab3:NewSection("Speed & Jump")
+
+-- ปุ่มสำหรับการตั้งค่าความเร็วเดิน
+Section3:NewToggle("Speed Walker", "Toggle Walk Speed", function(state)
+    if state then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 150
+    else
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+    end
+end)
+
+-- ปุ่มสำหรับการกระโดดไม่จำกัด
+Section3:NewButton("INF JUMP", "Enable Infinite Jump", function()
+    local InfiniteJumpEnabled = true
+    game:GetService("UserInputService").JumpRequest:Connect(function()
+        if InfiniteJumpEnabled then
+            game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+        end
+    end)
+end)
+
+Section3:NewButton("USE CANDY", "Consume Candy", function()
+    while true do
+        local args = { [1] = "Candy" }
+        game:GetService("ReplicatedStorage").UseConsumable:InvokeServer(unpack(args))
+        wait()
+    end
+end)
+
+
+-- สร้างแท็บและส่วนของ UI
+local Tab4 = Window:NewTab("Find Position")
+local Section4 = Tab4:NewSection("Copy CFrame")
+
+-- ตัวแปรเก็บตำแหน่ง CFrame ที่คัดลอก
+local copiedPosition = nil
+
+-- ปุ่มสำหรับคัดลอกตำแหน่ง CFrame
+Section4:NewButton("Get CFrame", "Copy Position to Clipboard", function()
+    copiedPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+    setclipboard(tostring(copiedPosition)) -- คัดลอกค่าตำแหน่งไปที่คลิปบอร์ด
+end)
+
+Section4:NewKeybind("Toggle ui", "Toggle the ui yes", Enum.KeyCode.F6, function()
+    Library:ToggleUI()
+end)
+
+-- ปุ่มสำหรับการเคลื่อนที่อัตโนมัติไปยังตำแหน่งที่คัดลอก
+Section4:NewButton("Auto Move to Copied Position", "Move to Copied Position", function()
+    if copiedPosition then
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+
+        -- เคลื่อนที่ไปที่ตำแหน่งที่คัดลอก
+        while true do
+            if (character.HumanoidRootPart.Position - copiedPosition).Magnitude > 5 then
+                humanoid:MoveTo(copiedPosition)
+            end
+            wait(1)
+        end
+    else
+        warn("Please copy a position first!")
+    end
+end)
+
